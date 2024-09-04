@@ -49,6 +49,13 @@ A variety of tools are available to support MLOps processes:
 7. Experiment Tracking: MLflow, Weights & Biases, Comet
 
 
+# MLOps Project
+
+This repository contains the structure for an MLOps project. Below is the directory layout with descriptions of each file and folder.
+
+## Project Structure
+
+```plaintext
 mlops-project/
 │
 ├── README.md                     # Overview and instructions for the project
@@ -103,6 +110,7 @@ mlops-project/
     ├── design.md                 # Documentation for project design
     ├── usage.md                  # Documentation for how to use the project
     └── api.md                    # API documentation for model serving
+
 
 
 ### Python code for this structure 
