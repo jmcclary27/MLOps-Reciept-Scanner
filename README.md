@@ -48,6 +48,16 @@ A variety of tools are available to support MLOps processes:
 6. Infrastructure Management: Kubernetes, Docker, Terraform
 7. Experiment Tracking: MLflow, Weights & Biases, Comet
 
+# Example MLOps Stack
+1. Version Control: Git + GitHub/GitLab
+2. Data Management: Apache Airflow + Delta Lake
+3. Model Training: TensorFlow/PyTorch + MLflow
+4. Model Packaging: Docker + Kubernetes
+5. CI/CD: Jenkins + GitHub Actions
+6. Model Serving: Kubernetes + TensorFlow Serving
+7. Monitoring: Prometheus + Grafana
+8. Feature Store: Feast
+9. Orchestration: Kubeflow + Airflow
 
 # MLOps Project
 
