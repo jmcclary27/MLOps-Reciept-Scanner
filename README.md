@@ -223,3 +223,54 @@ os.makedirs(base_dir, exist_ok=True)
 create_project_structure(base_dir, project_structure)
 
 print(f"Project structure created successfully in {os.path.abspath(base_dir)}")
+
+# Updated .sh file
+
+#!/bin/bash
+
+# Function to log messages with timestamps
+log() {
+    echo "[$(date)]: $1"
+}
+
+# Check if an environment name was provided
+if [ -z "$1" ]; then
+    log "Error: No environment name provided."
+    log "Usage: ./init_setup.sh <env_name>"
+    exit 1
+fi
+
+# Set the environment name and path
+ENV_NAME="$1"
+ENV_PATH="./envs/$ENV_NAME"
+
+# Start the script
+log "START"
+
+# Check if the environment already exists
+if [ -d "$ENV_PATH" ]; then
+    log "Environment '$ENV_NAME' already exists. Activating the environment..."
+else
+    log "Creating environment '$ENV_NAME' with Python 3.9..."
+    conda create --prefix "$ENV_PATH" python=3.9 -y
+fi
+
+# Activate the conda environment
+log "Activating the conda environment '$ENV_NAME'..."
+source activate "$ENV_PATH"
+
+# Install the development requirements
+if [ -f requirements.txt ]; then
+    log "Installing the development requirements..."
+    pip install -r requirements.txt
+else
+    log "Warning: requirements.txt not found. Skipping package installation."
+fi
+
+log "END"
+```
+
+# Data link (regression with tabular gemstone price dataset) 
+```bash
+https://www.bing.com/search?q=regression+with+tabular+gemstone+price+dataset+kaggle&gs_lcrp=EgZjaHJvbWUqBwgAEEUYwgMyBwgAEEUYwgMyBwgBEEUYwgMyBwgCEEUYwgMyBwgDEEUYwgMyBwgEEEUYwgMyBwgFEEUYwgMyBwgGEEUYwgMyBwgHEEUYwgPSAQo4ODE0NDZqMGoxqAIIsAIB&FORM=ANNTA1&PC=U531
+```
