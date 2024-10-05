@@ -17,7 +17,6 @@ list_of_files = [
     "src/utils/common.py",
     "src/utils/utils.py",
     "src/config/__init__.py",
-    "src/logging/__init__.py",
     "src/logger/logger.py",
     "src/exception/exception.py",
     "src/exception/__init__.py",
@@ -49,6 +48,8 @@ list_of_files = [
     "setup.cfg",
     "research/trials.ipynb",
     "templates/index.html",
+    "templates/form.html",
+    "templates/result.html",
     "pyproject.toml",
     "init_setup.sh",
     ".github/workflows/.gitkeep"

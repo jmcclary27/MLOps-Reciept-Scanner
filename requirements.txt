@@ -7,6 +7,6 @@ mlflow
 dvc
 ipykernel
 xgboost
-
+request
 
 -e .
