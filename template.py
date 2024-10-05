@@ -36,6 +36,7 @@ list_of_files = [
     "src/constants/__init__.py",
     "data/data.txt",
     "config/config.yaml",
+    "artifacts/info.txt",
     "test/__init__.py",
     "params.yaml",
     "schema.yaml",
@@ -49,7 +50,8 @@ list_of_files = [
     "research/trials.ipynb",
     "templates/index.html",
     "pyproject.toml",
-    "init_setup.sh"
+    "init_setup.sh",
+    ".github/workflows/.gitkeep"
 
 
 ]
