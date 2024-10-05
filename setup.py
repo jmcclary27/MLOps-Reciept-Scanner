@@ -3,11 +3,11 @@ import setuptools
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-__version__ = "0.0.0"
+__version__ = "0.0.1"
 
 REPO_NAME = "MLOps-End-To-End-Project"
 AUTHOR_USER_NAME = "Asutosh"
-SRC_REPO = "mlproject"
+SRC_REPO = "mlopsproject"
 AUTHOR_EMAIL = "ashutoshsidhya69@gmail.com"
 
 

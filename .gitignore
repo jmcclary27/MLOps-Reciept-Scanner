@@ -3,3 +3,5 @@ mlproject.egg-info
 data
 env
 logs
+mlopsproject.egg-info
+__pycache__
