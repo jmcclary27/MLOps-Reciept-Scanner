@@ -7,7 +7,7 @@ from logger import logging
 from dataclasses import dataclass
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
-from src.exception import CustomException
+from exception import CustomException
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OrdinalEncoder , StandardScaler
 from utils.utils import save_object
