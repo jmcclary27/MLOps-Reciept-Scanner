@@ -5,8 +5,9 @@ seaborn
 flask
 mlflow
 dvc
-ipykernel
 xgboost
-request
+
+
+
 
 -e .

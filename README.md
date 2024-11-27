@@ -1,5 +1,10 @@
 ### FOUNDATION OF MLOps
 
+ - Mlflow
+ - Airflow
+ - Dvc
+ - Docker
+
 MLOps (Machine Learning Operations) is a set of practices, tools, and methodologies that aim to automate and streamline the deployment, monitoring, and management of machine learning (ML) models in production environments. It is an extension of the DevOps (Development Operations) practices, specifically tailored to the needs of machine learning workflows. MLOps bridges the gap between data science and IT operations, ensuring that machine learning models are deployed effectively and maintained properly over their lifecycle.
 
 ### Key Components of MLOps
