@@ -1,6 +1,5 @@
 .env
 mlproject.egg-info
-data
 env
 logs
 mlopsproject.egg-info
