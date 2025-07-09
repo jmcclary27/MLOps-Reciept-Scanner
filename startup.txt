@@ -1,0 +1,2 @@
+eval "$(/c/Users/jaden/anaconda3/Scripts/conda.exe shell.bash hook)"
+conda activate ./env
