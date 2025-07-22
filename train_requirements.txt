@@ -1,0 +1,8 @@
+torch==2.2.0
+transformers==4.38.2
+pandas
+Pillow
+mlflow
+scikit-learn
+google-cloud-storage
+gcsfs

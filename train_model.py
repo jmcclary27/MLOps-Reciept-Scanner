@@ -1,3 +1,4 @@
+import json
 import os
 import pandas as pd
 import torch
@@ -5,10 +6,14 @@ import mlflow
 import mlflow.transformers
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
-from transformers import TrOCRProcessor, VisionEncoderDecoderModel, AdamW
+from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 
-# Set MLflow tracking URI
-mlflow.set_tracking_uri("http://<YOUR-VM-IP>:5000")  # Replace with your actual IP
+# Load MLFLOW URI securely from config file
+with open("config.json", "r") as f:
+    config = json.load(f)
+
+mlflow.set_tracking_uri(config["mlflow_tracking_uri"])
+
 mlflow.set_experiment("receipt-ocr-finetune")
 
 # Load processor and model
@@ -51,7 +56,7 @@ def train_model(csv_path, epochs=5, batch_size=4, lr=5e-5):
     dataset = ReceiptDataset(csv_path)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
 
-    optimizer = AdamW(model.parameters(), lr=lr)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     model.train()
 
     with mlflow.start_run():

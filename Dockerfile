@@ -1,15 +1,14 @@
-# Dockerfile
-
-FROM gcr.io/deeplearning-platform-release/pytorch-gpu.2-0
+FROM python:3.9-slim
 
 # Set working directory
 WORKDIR /app
 
-# Copy code
-COPY . /app
+# Copy source code
+COPY . .
 
-# Install extra packages if needed
-RUN pip install --upgrade pip
-RUN pip install transformers datasets pillow mlflow google-cloud-storage gcsfs
+# Install dependencies
+RUN pip install --upgrade pip && \
+    pip install -r train_requirements.txt
 
-ENTRYPOINT ["python", "src/models/train_model.py"]
+# Run the training script by default
+ENTRYPOINT ["python", "train_model.py"]
