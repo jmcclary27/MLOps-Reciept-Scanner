@@ -8,3 +8,5 @@ gcsfs
 dvc
 dvc-gs
 google-cloud-aiplatform
+google-auth
+google-cloud-storage
