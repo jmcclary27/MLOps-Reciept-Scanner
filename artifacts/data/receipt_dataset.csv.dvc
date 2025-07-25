@@ -1,5 +1,5 @@
 outs:
-- md5: 26929b15772da56efbaad71fef50a704
-  size: 90963
+- md5: 994296dbd6fddbe7820ddd2188856ee6
+  size: 96593
   hash: md5
   path: receipt_dataset.csv

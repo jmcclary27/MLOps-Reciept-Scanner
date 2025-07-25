@@ -20,6 +20,12 @@ mlflow.set_experiment("receipt-ocr-finetune")
 processor = TrOCRProcessor.from_pretrained("microsoft/trocr-base-stage1")
 model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-stage1")
 
+model.config.decoder_start_token_id = processor.tokenizer.cls_token_id or processor.tokenizer.bos_token_id or 0
+model.config.pad_token_id = processor.tokenizer.pad_token_id
+
+print("decoder_start_token_id:", model.config.decoder_start_token_id)
+print("pad_token_id:", model.config.pad_token_id)
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
@@ -33,7 +39,7 @@ class ReceiptDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        img_path = self.data.iloc[idx]['image_path']
+        img_path = self.data.iloc[idx]['image']
         text = str(self.data.iloc[idx]['text'])
 
         image = Image.open(img_path).convert("RGB")
@@ -91,12 +97,10 @@ def train_model(csv_path, epochs=5, batch_size=4, lr=5e-5):
 
         # Log model to MLflow
         mlflow.transformers.log_model(
-            transformers_model=model,
+            model_dir=output_dir,
             artifact_path="model",
-            input_example={"image": "<sample_image.jpg>"},
             task="image-to-text"
         )
-
 
 if __name__ == "__main__":
     import argparse
