@@ -1,0 +1,6 @@
+outs:
+- md5: 2949b36fd7dd1c2738e23a33c01637bb.dir
+  size: 1563898
+  nfiles: 626
+  hash: md5
+  path: box
