@@ -1,8 +1,10 @@
-torch==2.2.0
-transformers==4.38.2
-pandas
-Pillow
+torch>=1.13
+transformers>=4.30
 mlflow
+pandas
 scikit-learn
-google-cloud-storage
+Pillow
 gcsfs
+dvc
+dvc-gs
+google-cloud-aiplatform
