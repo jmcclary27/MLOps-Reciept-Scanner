@@ -4,7 +4,6 @@ numpy
 seaborn 
 flask
 mlflow
-dvc
 xgboost
 
 

@@ -4,13 +4,14 @@ gcloud auth login
 gcloud compute ssh mlflow-server --zone=us-central1-a
 ps aux | grep mlflow
 
+# Starts server
 nohup mlflow server \
   --backend-store-uri sqlite:///mlflow.db \
   --default-artifact-root gs://<your-bucket-name> \
   --host 0.0.0.0 \
   --port 5000 > mlflow.log 2>&1 &
 
-
+# Finds IP
 gcloud compute instances describe mlflow-server \
   --zone=us-central1-a \
   --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
@@ -27,8 +28,12 @@ docker build -t gcr.io/${PROJECT_ID}/${IMAGE_NAME}:latest .
 # Push to GCR
 docker push gcr.io/${PROJECT_ID}/${IMAGE_NAME}:latest
 
-gcloud ai custom-jobs create \
-  --region=us-central1 \
-  --display-name=receipt-ocr-job \
-  --worker-pool-spec=machine-type=n1-standard-4,replica-count=1,container-image-uri=gcr.io/${PROJECT_ID}/${IMAGE_NAME}:latest \
-  --args="--csv=data/receipts.csv"
+# Building dockerfile
+docker build --no-cache -t receipt-ocr-train:latest .
+
+# Tag and push to arifact registry
+docker tag receipt-ocr-train:latest us-central1-docker.pkg.dev/mlops-receipt-scanner/receipt-ocr-training/receipt-ocr-train:latest
+docker push us-central1-docker.pkg.dev/mlops-receipt-scanner/receipt-ocr-training/receipt-ocr-train:latest
+
+# Starts Vertex job
+gcloud ai custom-jobs create   --region=us-central1   --display-name=receipt-ocr-train-job   --worker-pool-spec=machine-type=n1-standard-4,replica-count=1,container-image-uri=us-central1-docker.pkg.dev/mlops-receipt-scanner/receipt-ocr-training/receipt-ocr-train:latest   --args="--csv=gs://my-receipts-dvc-bucket/data/receipts.csv","--epochs=5"

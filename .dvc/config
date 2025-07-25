@@ -1,0 +1,5 @@
+[core]
+    remote = myremote
+['remote "myremote"']
+    url = gs://my-receipts-dvc-bucket
+    credentialpath = C:/Users/jaden/MLOps-Receipt-Scanner/mlops-receipt-scanner-4fbefa515066.json

@@ -1,14 +1,17 @@
 FROM python:3.9-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy source code
 COPY . .
+COPY vertex_dvc_key.json /app/vertex_dvc_key.json
 
-# Install dependencies
 RUN pip install --upgrade pip && \
-    pip install -r train_requirements.txt
+    pip install -r train_requirements.txt && \
+    pip install dvc && \
+    pip install dvc-gs && \
+    pip install gcsfs
 
-# Run the training script by default
-ENTRYPOINT ["python", "train_model.py"]
+ENV GOOGLE_APPLICATION_CREDENTIALS="/app/vertex_dvc_key.json"
+
+ENTRYPOINT ["bash", "-c", "dvc pull && python train_model.py --csv artifacts/data/receipt_dataset.csv"]
+
