@@ -2,4 +2,3 @@
     remote = myremote
 ['remote "myremote"']
     url = gs://my-receipts-dvc-bucket
-    credentialpath = C:/Program Files/Git/path/to/key.json
