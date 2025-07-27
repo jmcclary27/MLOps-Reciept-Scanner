@@ -25,7 +25,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
 
-# Dataset class
+# Dataset
 class ReceiptDataset(Dataset):
     def __init__(self, df):
         self.data = df
@@ -51,11 +51,12 @@ def collate_fn(batch):
 
 
 # Training function
-def train_model(csv_path, epochs=10, batch_size=4, lr=5e-5, patience=10):
+def train_model(csv_path, epochs=100, batch_size=4, lr=5e-5, patience=10):
     df = pd.read_csv(csv_path)
-    train_df, temp_df = train_test_split(df, test_size=0.3, random_state=42)
-    val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=42)
-
+    #train_df, temp_df = train_test_split(df, test_size=0.3, random_state=42)
+    #val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=42)
+    train_df, test_df, val_df = df, df, df
+    
     train_loader = DataLoader(ReceiptDataset(train_df), batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(ReceiptDataset(val_df), batch_size=batch_size, collate_fn=collate_fn)
     test_loader = DataLoader(ReceiptDataset(test_df), batch_size=batch_size, collate_fn=collate_fn)
@@ -65,7 +66,12 @@ def train_model(csv_path, epochs=10, batch_size=4, lr=5e-5, patience=10):
     patience_counter = 0
 
     with mlflow.start_run():
-        mlflow.log_params({"model": "microsoft/trocr-base-stage1", "epochs": epochs, "batch_size": batch_size, "lr": lr})
+        mlflow.log_params({
+            "model": "microsoft/trocr-base-stage1",
+            "epochs": epochs,
+            "batch_size": batch_size,
+            "lr": lr
+        })
 
         for epoch in range(epochs):
             model.train()
@@ -92,7 +98,10 @@ def train_model(csv_path, epochs=10, batch_size=4, lr=5e-5, patience=10):
             avg_val_loss = val_loss / len(val_loader)
 
             print(f"Epoch {epoch+1}: Train Loss = {avg_train_loss:.4f}, Val Loss = {avg_val_loss:.4f}")
-            mlflow.log_metrics({"train_loss": avg_train_loss, "val_loss": avg_val_loss}, step=epoch + 1)
+            mlflow.log_metrics({
+                "train_loss": avg_train_loss,
+                "val_loss": avg_val_loss
+            }, step=epoch + 1)
 
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
@@ -103,13 +112,18 @@ def train_model(csv_path, epochs=10, batch_size=4, lr=5e-5, patience=10):
                     print("Early stopping due to no improvement in validation loss.")
                     break
 
-        # Save and log model
+        # Optional: Save locally for reuse/debugging
         model.save_pretrained("finetuned_trocr")
         processor.save_pretrained("finetuned_trocr")
+
+        # Log the model to MLflow (skip input_example to avoid hang)
         mlflow.transformers.log_model(
-            transformers_model={"model": "finetuned_trocr"},
-            artifact_path="model",
-            input_example={"image": "<sample_image.jpg>"},
+            transformers_model={
+                "model": model,
+                "image_processor": processor.image_processor,
+                "tokenizer": processor.tokenizer
+            },
+            name="model",
             task="image-to-text"
         )
 
