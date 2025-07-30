@@ -10,3 +10,4 @@ dvc-gs
 google-cloud-aiplatform
 google-auth
 google-cloud-storage
+torchvision
