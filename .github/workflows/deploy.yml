@@ -7,58 +7,60 @@ on:
 env:
   REGION: us-central1
   IMAGE_NAME: trocr-flask-api
+  REPO_NAME: trocr-api-repo
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: 📦 Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Google Cloud SDK
+    - name: ☁️ Set up Google Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         service_account_key: ${{ secrets.GCP_SA_KEY_JSON }}
         export_default_credentials: true
 
-    - name: Authenticate Docker to Artifact Registry
+    - name: 🔐 Authenticate Docker to Artifact Registry
       run: |
+        echo "Authenticating Docker for Artifact Registry..."
         gcloud auth configure-docker us-central1-docker.pkg.dev
-      
-    - name: Debug Whoami
-      run: |
-        gcloud auth list
-        gcloud config list
-        gcloud projects get-iam-policy ${{ secrets.GCP_PROJECT_ID }} \
-          --flatten="bindings[].members" \
-          --filter="bindings.members:$(gcloud config get-value account)" \
-          --format="table(bindings.role)"
 
-    - name: Build and Push Docker Image
+    - name: 🛠️ Build Docker image
       run: |
-        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trocr-api-repo/${{ env.IMAGE_NAME }} .
-        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trocr-api-repo/${{ env.IMAGE_NAME }}
+        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }} .
 
-    - name: Upload Model to Vertex AI
+    - name: 📤 Push Docker image to Artifact Registry
+      run: |
+        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}
+
+    - name: ☁️ Upload model to Vertex AI
       run: |
         gcloud ai models upload \
           --region=${{ env.REGION }} \
           --display-name=trocr-model \
-          --container-image-uri=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trocr-api-repo/${{ env.IMAGE_NAME }}
+          --container-image-uri=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}
 
-    - name: Create Endpoint (if needed)
+    - name: 🔍 Check if endpoint exists
+      id: check-endpoint
       run: |
-        gcloud ai endpoints list --region=${{ env.REGION }}
+        EXISTING_ENDPOINT=$(gcloud ai endpoints list --region=${{ env.REGION }} --filter="displayName=trocr-endpoint" --format="value(name)")
+        echo "EXISTING_ENDPOINT=$EXISTING_ENDPOINT" >> $GITHUB_ENV
+
+    - name: 🧩 Create endpoint if missing
+      if: env.EXISTING_ENDPOINT == ''
+      run: |
         gcloud ai endpoints create \
           --region=${{ env.REGION }} \
-          --display-name=trocr-endpoint || echo "Endpoint may already exist"
+          --display-name=trocr-endpoint
 
-    - name: Deploy Model to Endpoint
+    - name: 🚀 Deploy model to Vertex AI endpoint
       run: |
-        MODEL_ID=$(gcloud ai models list --region=${{ env.REGION }} --format='value(name)' --filter="displayName=trocr-model" | head -n 1)
-        ENDPOINT_ID=$(gcloud ai endpoints list --region=${{ env.REGION }} --format='value(name)' --filter="displayName=trocr-endpoint" | head -n 1)
+        MODEL_ID=$(gcloud ai models list --region=${{ env.REGION }} --filter="displayName=trocr-model" --format="value(name)" | head -n 1)
+        ENDPOINT_ID=$(gcloud ai endpoints list --region=${{ env.REGION }} --filter="displayName=trocr-endpoint" --format="value(name)" | head -n 1)
 
         gcloud ai endpoints deploy-model $ENDPOINT_ID \
           --region=${{ env.REGION }} \
