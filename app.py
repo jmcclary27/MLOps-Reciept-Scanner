@@ -19,14 +19,19 @@ def predict():
         return jsonify({"error": "No file uploaded"}), 400
 
     file = request.files["file"]
-    image = Image.open(io.BytesIO(file.read())).convert("RGB")
+    try:
+        image = Image.open(io.BytesIO(file.read())).convert("RGB")
+        pixel_values = processor(images=image, return_tensors="pt").pixel_values.to(device)
+        generated_ids = model.generate(pixel_values)
+        prediction = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        return jsonify({"text": prediction})
+    except Exception as e:
+        return jsonify({"error": f"Inference failed: {str(e)}"}), 500
 
-    # Process image
-    pixel_values = processor(images=image, return_tensors="pt").pixel_values.to(device)
-    generated_ids = model.generate(pixel_values)
-    prediction = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
-    return jsonify({"text": prediction})
+@app.route("/health", methods=["GET"])
+def health():
+    return "ok", 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
