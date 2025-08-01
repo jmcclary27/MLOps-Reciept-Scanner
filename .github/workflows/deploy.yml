@@ -27,11 +27,10 @@ jobs:
     - name: Authenticate Docker to Artifact Registry
       run: gcloud auth configure-docker us-central1-docker.pkg.dev
 
-    - name: Build and Push Docker Image to Artifact Registry
+    - name: Build and Push Docker Image
       run: |
-        IMAGE_URI=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}
-        docker build -t $IMAGE_URI .
-        docker push $IMAGE_URI
+        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trocr-api-repo/${{ env.IMAGE_NAME }} .
+        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trocr-api-repo/${{ env.IMAGE_NAME }}
 
     - name: Upload Model to Vertex AI
       run: |
