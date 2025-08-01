@@ -2,12 +2,14 @@ name: Deploy to Vertex AI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master ]  # triggers on push to master
 
 env:
-  REGION: us-central1
-  IMAGE_NAME: trocr-flask-api
-  REPO_NAME: trocr-api-repo
+  REGION: ${{ secrets.GCP_REGION }}
+  IMAGE_NAME: ${{ secrets.GCP_IMAGE_NAME }}
+  CONTAINER_NAME: ${{ secrets.VERTEX_CONTAINER_NAME }}
+  ENDPOINT_NAME: ${{ secrets.VERTEX_ENDPOINT_NAME }}
+  MODEL_NAME: ${{ secrets.VERTEX_MODEL_NAME }}
 
 jobs:
   build-and-deploy:
@@ -29,32 +31,32 @@ jobs:
 
     - name: Build and Push Docker Image
       run: |
-        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trocr-api-repo/${{ env.IMAGE_NAME }} .
-        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trocr-api-repo/${{ env.IMAGE_NAME }}
+        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.CONTAINER_NAME }}/${{ env.IMAGE_NAME }} .
+        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.CONTAINER_NAME }}/${{ env.IMAGE_NAME }}
 
     - name: Upload Model to Vertex AI
       run: |
-        IMAGE_URI=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}
         gcloud ai models upload \
           --region=${{ env.REGION }} \
-          --display-name=trocr-model \
-          --container-image-uri=$IMAGE_URI
+          --display-name=${{ env.MODEL_NAME }} \
+          --container-image-uri=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.CONTAINER_NAME }}/${{ env.IMAGE_NAME }}
 
-    - name: Create Endpoint if Not Exists
+    - name: Create Endpoint (if not exists)
       run: |
-        EXISTING=$(gcloud ai endpoints list --region=${{ env.REGION }} --filter="displayName=trocr-endpoint" --format="value(name)")
-        if [ -z "$EXISTING" ]; then
+        ENDPOINT_EXIST=$(gcloud ai endpoints list --region=${{ env.REGION }} --filter="displayName=${{ env.ENDPOINT_NAME }}" --format="value(name)")
+        if [ -z "$ENDPOINT_EXIST" ]; then
           gcloud ai endpoints create \
             --region=${{ env.REGION }} \
-            --display-name=trocr-endpoint
+            --display-name=${{ env.ENDPOINT_NAME }}
         else
-          echo "Endpoint already exists: $EXISTING"
+          echo "✅ Endpoint already exists: $ENDPOINT_EXIST"
         fi
 
     - name: Deploy Model to Endpoint
       run: |
-        MODEL_ID=$(gcloud ai models list --region=${{ env.REGION }} --format='value(name)' --filter="displayName=trocr-model" | head -n 1)
-        ENDPOINT_ID=$(gcloud ai endpoints list --region=${{ env.REGION }} --format='value(name)' --filter="displayName=trocr-endpoint" | head -n 1)
+        MODEL_ID=$(gcloud ai models list --region=${{ env.REGION }} --filter="displayName=${{ env.MODEL_NAME }}" --format="value(name)" | head -n 1)
+        ENDPOINT_ID=$(gcloud ai endpoints list --region=${{ env.REGION }} --filter="displayName=${{ env.ENDPOINT_NAME }}" --format="value(name)" | head -n 1)
+
         gcloud ai endpoints deploy-model $ENDPOINT_ID \
           --region=${{ env.REGION }} \
           --model=$MODEL_ID \
