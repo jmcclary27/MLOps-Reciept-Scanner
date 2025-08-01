@@ -1,47 +1,32 @@
-import logging
-from flask import Flask, request, render_template
-from src.logger import logger
-from src.exception import CustomException
-import sys
-from src.pipeline.prediction_pipeline import PredictPipeline, CustomData
+from flask import Flask, request, jsonify
+from transformers import TrOCRProcessor, VisionEncoderDecoderModel
+from PIL import Image
+import torch
+import io
 
 app = Flask(__name__)
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
+# Load model and processor
+model = VisionEncoderDecoderModel.from_pretrained("saved_model")
+processor = TrOCRProcessor.from_pretrained("saved_model")
 
-@app.route('/')
-def home_page():
-    return render_template("index.html")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
 
-@app.route("/predict", methods=["GET", "POST"])
-def predict_datapoint():
-    if request.method == "GET":
-        return render_template("form.html")
-    else:
-        try:
-            data = CustomData(
-                carat=float(request.form.get("carat")),
-                depth=float(request.form.get("depth")),
-                table=float(request.form.get("table")),
-                x=float(request.form.get("x")),
-                y=float(request.form.get("y")),
-                z=float(request.form.get("z")),
-                cut=request.form.get("cut"),
-                color=request.form.get("color"),
-                clarity=request.form.get("clarity")
-            )
-            final_data = data.get_data_as_dataframe()
+@app.route("/predict", methods=["POST"])
+def predict():
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
 
-            predict_pipeline = PredictPipeline()
-            pred = predict_pipeline.predict(final_data)
+    file = request.files["file"]
+    image = Image.open(io.BytesIO(file.read())).convert("RGB")
 
-            result = round(pred[0], 2)
-            return render_template("result.html", final_result=result)
+    # Process image
+    pixel_values = processor(images=image, return_tensors="pt").pixel_values.to(device)
+    generated_ids = model.generate(pixel_values)
+    prediction = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
-        except Exception as e:
-            logging.error("Error during prediction: %s", e)
-            return render_template("form.html", error="An error occurred during prediction. Please check your input and try again.")
+    return jsonify({"text": prediction})
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    app.run(host="0.0.0.0", port=8080)

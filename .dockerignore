@@ -1,0 +1,7 @@
+__pycache__/
+.env
+*.pyc
+*.pyo
+*.pyd
+saved_model/.git/
+saved_model/**/*.ckpt

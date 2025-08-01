@@ -1,0 +1,49 @@
+name: Deploy to Vertex AI
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY_JSON }}
+        export_default_credentials: true
+
+    - name: Authenticate Docker
+      run: gcloud auth configure-docker
+
+    - name: Build and Push Docker Image
+      run: |
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_IMAGE_NAME }} .
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_IMAGE_NAME }}
+
+    - name: Deploy to Vertex AI
+      run: |
+        gcloud ai endpoints list --region=${{ secrets.GCP_REGION }}
+        gcloud ai models upload \
+          --region=${{ secrets.GCP_REGION }} \
+          --display-name=trocr-model \
+          --container-image-uri=gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_IMAGE_NAME }}
+
+        gcloud ai endpoints create \
+          --region=${{ secrets.GCP_REGION }} \
+          --display-name=trocr-endpoint
+
+        MODEL_ID=$(gcloud ai models list --region=${{ secrets.GCP_REGION }} --format='value(name)' --filter="displayName=trocr-model" | head -n 1)
+        ENDPOINT_ID=$(gcloud ai endpoints list --region=${{ secrets.GCP_REGION }} --format='value(name)' --filter="displayName=trocr-endpoint" | head -n 1)
+
+        gcloud ai endpoints deploy-model $ENDPOINT_ID \
+          --region=${{ secrets.GCP_REGION }} \
+          --model=$MODEL_ID \
+          --display-name=trocr-deployed \
+          --traffic-split=0=100

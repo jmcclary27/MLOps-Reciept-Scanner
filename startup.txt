@@ -1,6 +1,8 @@
 eval "$(/c/Users/jaden/anaconda3/Scripts/conda.exe shell.bash hook)"
 conda activate ./env
 gcloud auth login
+export GOOGLE_APPLICATION_CREDENTIALS="gcloud_accessor_mlflow.json"
+
 gcloud compute ssh mlflow-server --zone=us-central1-a
 ps aux | grep mlflow
 
@@ -29,7 +31,7 @@ docker build -t gcr.io/${PROJECT_ID}/${IMAGE_NAME}:latest .
 docker push gcr.io/${PROJECT_ID}/${IMAGE_NAME}:latest
 
 # Building dockerfile
-docker build --no-cache -t receipt-ocr-train:latest .
+docker build -f Dockerfile.train -t receipt-ocr-train:latest .
 
 # Tag and push to arifact registry
 docker tag receipt-ocr-train:latest us-central1-docker.pkg.dev/mlops-receipt-scanner/receipt-ocr-training/receipt-ocr-train:latest
