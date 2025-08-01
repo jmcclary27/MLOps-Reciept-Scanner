@@ -26,6 +26,15 @@ jobs:
     - name: Authenticate Docker to Artifact Registry
       run: |
         gcloud auth configure-docker us-central1-docker.pkg.dev
+      
+    - name: Debug Whoami
+      run: |
+        gcloud auth list
+        gcloud config list
+        gcloud projects get-iam-policy ${{ secrets.GCP_PROJECT_ID }} \
+          --flatten="bindings[].members" \
+          --filter="bindings.members:$(gcloud config get-value account)" \
+          --format="table(bindings.role)"
 
     - name: Build and Push Docker Image
       run: |
