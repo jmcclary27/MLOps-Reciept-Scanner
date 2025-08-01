@@ -2,7 +2,11 @@ name: Deploy to Vertex AI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master ] 
+
+env:
+  REGION: us-central1
+  IMAGE_NAME: trocr-flask-api
 
 jobs:
   build-and-deploy:
@@ -19,31 +23,36 @@ jobs:
         service_account_key: ${{ secrets.GCP_SA_KEY_JSON }}
         export_default_credentials: true
 
-    - name: Authenticate Docker
-      run: gcloud auth configure-docker
+    - name: Authenticate Docker to Artifact Registry
+      run: |
+        gcloud auth configure-docker us-central1-docker.pkg.dev
 
     - name: Build and Push Docker Image
       run: |
-        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_IMAGE_NAME }} .
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_IMAGE_NAME }}
+        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trocr-api-repo/${{ env.IMAGE_NAME }} .
+        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trocr-api-repo/${{ env.IMAGE_NAME }}
 
-    - name: Deploy to Vertex AI
+    - name: Upload Model to Vertex AI
       run: |
-        gcloud ai endpoints list --region=${{ secrets.GCP_REGION }}
         gcloud ai models upload \
-          --region=${{ secrets.GCP_REGION }} \
+          --region=${{ env.REGION }} \
           --display-name=trocr-model \
-          --container-image-uri=gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_IMAGE_NAME }}
+          --container-image-uri=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trocr-api-repo/${{ env.IMAGE_NAME }}
 
+    - name: Create Endpoint (if needed)
+      run: |
+        gcloud ai endpoints list --region=${{ env.REGION }}
         gcloud ai endpoints create \
-          --region=${{ secrets.GCP_REGION }} \
-          --display-name=trocr-endpoint
+          --region=${{ env.REGION }} \
+          --display-name=trocr-endpoint || echo "Endpoint already exists"
 
-        MODEL_ID=$(gcloud ai models list --region=${{ secrets.GCP_REGION }} --format='value(name)' --filter="displayName=trocr-model" | head -n 1)
-        ENDPOINT_ID=$(gcloud ai endpoints list --region=${{ secrets.GCP_REGION }} --format='value(name)' --filter="displayName=trocr-endpoint" | head -n 1)
+    - name: Deploy Model to Endpoint
+      run: |
+        MODEL_ID=$(gcloud ai models list --region=${{ env.REGION }} --format='value(name)' --filter="displayName=trocr-model" | head -n 1)
+        ENDPOINT_ID=$(gcloud ai endpoints list --region=${{ env.REGION }} --format='value(name)' --filter="displayName=trocr-endpoint" | head -n 1)
 
         gcloud ai endpoints deploy-model $ENDPOINT_ID \
-          --region=${{ secrets.GCP_REGION }} \
+          --region=${{ env.REGION }} \
           --model=$MODEL_ID \
           --display-name=trocr-deployed \
           --traffic-split=0=100
