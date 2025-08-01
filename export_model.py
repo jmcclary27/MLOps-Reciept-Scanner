@@ -1,25 +1,28 @@
-import os
-import json
-import mlflow
+from pathlib import Path
 
-from transformers import VisionEncoderDecoderModel, TrOCRProcessor
+required_files = [
+    "config.json",
+    "generation_config.json",
+    "model-00001-of-00004.safetensors",
+    "model.safetensors.index.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "vocab.json",
+    "merges.txt",
+    "special_tokens_map.json",
+    "preprocessor_config.json",
+]
 
-# === Load config ===
-with open("mlflow_config.json", "r") as f:
-    config = json.load(f)
+missing = []
+saved_model_dir = Path("saved_model")
 
-MLFLOW_TRACKING_URI = config["MLFLOW_TRACKING_URI"]
-RUN_ID = config["RUN_ID"]
-FINAL_DIR = "saved_model"
+for file in required_files:
+    if not (saved_model_dir / file).exists():
+        missing.append(file)
 
-# === Set MLflow URI ===
-mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-
-# === Full download path for the model
-download_path = os.path.join(os.getcwd(), FINAL_DIR)
-
-# === Download model directly into ./saved_model/
-print(f"📦 Downloading model to: {download_path}")
-mlflow.artifacts.download_artifacts(f"runs:/{RUN_ID}/model", dst_path=download_path)
-
-print(f"✅ Model successfully saved in: {FINAL_DIR}/")
+if not missing:
+    print("[✓] All required files are present in 'saved_model/'")
+else:
+    print("[!] Missing files:")
+    for f in missing:
+        print(f"  - {f}")
