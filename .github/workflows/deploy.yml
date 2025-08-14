@@ -45,7 +45,11 @@ jobs:
         gcloud ai models upload \
           --region=${{ env.REGION }} \
           --display-name=trocr-model \
-          --container-image-uri=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}
+          --container-image-uri=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }} \
+          --artifact-uri=gs://my-mlflow-artifacts-bucket-2025/1/models/m-6f67b73f271b44c58f192da81c150357/artifacts/model \
+          --container-predict-route=/predict \
+          --container-health-route=/health \
+          --container-ports=8080
 
     - name: 🔍 Check if endpoint exists
       id: check-endpoint
@@ -62,8 +66,11 @@ jobs:
 
     - name: 🚀 Deploy model to Vertex AI endpoint
       run: |
-        MODEL_ID=$(gcloud ai models list --region=${{ env.REGION }} --filter="displayName=trocr-model" --format="value(name)" | head -n 1)
-        ENDPOINT_ID=$(gcloud ai endpoints list --region=${{ env.REGION }} --filter="displayName=trocr-endpoint" --format="value(name)" | head -n 1)
+        MODEL_ID=$(gcloud ai models list \
+          --region=${{ env.REGION }} \
+          --filter="displayName=trocr-model" \
+          --sort-by=~createTime \
+          --format="value(name)" | head -n 1)
 
         gcloud ai endpoints deploy-model $ENDPOINT_ID \
           --region=${{ env.REGION }} \

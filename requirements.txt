@@ -8,3 +8,5 @@ torch
 transformers
 Pillow
 safetensors
+google-cloud-storage
+gunicorn
