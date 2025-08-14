@@ -51,18 +51,24 @@ jobs:
           --container-health-route=/health \
           --container-ports=8080
 
-    - name: 🔍 Check if endpoint exists
-      id: check-endpoint
+    - name: 🧩 Ensure endpoint exists and capture ID
       run: |
-        EXISTING_ENDPOINT=$(gcloud ai endpoints list --region=${{ env.REGION }} --filter="displayName=trocr-endpoint" --format="value(name)")
-        echo "EXISTING_ENDPOINT=$EXISTING_ENDPOINT" >> $GITHUB_ENV
-
-    - name: 🧩 Create endpoint if missing
-      if: env.EXISTING_ENDPOINT == ''
-      run: |
-        gcloud ai endpoints create \
+        # Try to find an existing endpoint by display name
+        ENDPOINT_ID=$(gcloud ai endpoints list \
           --region=${{ env.REGION }} \
-          --display-name=trocr-endpoint
+          --filter="displayName=trocr-endpoint" \
+          --format="value(name)")
+
+        # If not found, create it and capture its name
+        if [ -z "$ENDPOINT_ID" ]; then
+          ENDPOINT_ID=$(gcloud ai endpoints create \
+            --region=${{ env.REGION }} \
+            --display-name=trocr-endpoint \
+            --format="value(name)")
+        fi
+
+        echo "ENDPOINT_ID=$ENDPOINT_ID"
+        echo "ENDPOINT_ID=$ENDPOINT_ID" >> $GITHUB_ENV
 
     - name: 🚀 Deploy model to Vertex AI endpoint
       run: |
@@ -72,8 +78,18 @@ jobs:
           --sort-by=~createTime \
           --format="value(name)" | head -n 1)
 
-        gcloud ai endpoints deploy-model $ENDPOINT_ID \
+        if [ -z "$MODEL_ID" ]; then
+          echo "No model found with displayName=trocr-model" >&2
+          exit 1
+        fi
+
+        if [ -z "$ENDPOINT_ID" ]; then
+          echo "ENDPOINT_ID is empty; previous step didn't export it." >&2
+          exit 1
+        fi
+
+        gcloud ai endpoints deploy-model "$ENDPOINT_ID" \
           --region=${{ env.REGION }} \
-          --model=$MODEL_ID \
+          --model="$MODEL_ID" \
           --display-name=trocr-deployed \
           --traffic-split=0=100
