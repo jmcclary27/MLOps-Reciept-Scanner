@@ -51,24 +51,31 @@ jobs:
           --container-health-route=/health \
           --container-ports=8080
 
-    - name: 🧩 Ensure endpoint exists and capture ID
+    # 👈 Previous step: ensure ENDPOINT_ID exists and is exported
+    - name: 🔎 Ensure endpoint exists and export ENDPOINT_ID
       run: |
-        # Try to find an existing endpoint by display name
+        set -e
+
+        # Try to find existing endpoint by displayName
         ENDPOINT_ID=$(gcloud ai endpoints list \
           --region=${{ env.REGION }} \
-          --filter="displayName=trocr-endpoint" \
-          --format="value(name)")
+          --filter='displayName=trocr-endpoint' \
+          --format='value(name)' | head -n 1)
 
-        # If not found, create it and capture its name
+        # Create if not found
         if [ -z "$ENDPOINT_ID" ]; then
-          ENDPOINT_ID=$(gcloud ai endpoints create \
+          echo "No existing endpoint named trocr-endpoint; creating..."
+          CREATE_OUT=$(gcloud ai endpoints create trocr-endpoint \
             --region=${{ env.REGION }} \
-            --display-name=trocr-endpoint \
-            --format="value(name)")
+            --format='value(name)')
+          # The create command returns the endpoint resource name (ID)
+          ENDPOINT_ID="$CREATE_OUT"
         fi
 
+        # Echo for logs and persist to later steps
         echo "ENDPOINT_ID=$ENDPOINT_ID"
         echo "ENDPOINT_ID=$ENDPOINT_ID" >> $GITHUB_ENV
+
 
     - name: 🚀 Deploy model to Vertex AI endpoint
       run: |
@@ -92,4 +99,6 @@ jobs:
           --region=${{ env.REGION }} \
           --model="$MODEL_ID" \
           --display-name=trocr-deployed \
-          --traffic-split=0=100
+          --machine-type=n1-highmem-8 \
+          --traffic-split=0=100 \
+          --async
