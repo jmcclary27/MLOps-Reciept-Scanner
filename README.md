@@ -32,8 +32,8 @@ The MLOps lifecycle typically consists of the following phases:
 2. Model Development: This involves selecting algorithms, feature engineering, training models, and validating them. It is an iterative process, often requiring multiple cycles of experimentation to achieve optimal performance.
 
 3. Model Training and Validation: Training the ML model on large datasets and validating its performance using cross-validation or other techniques to ensure that it generalizes well to unseen data.
-4. Model Deployment: Deploying the trained model into production environments where it can make real-time or batch predictions. This could involve deploying on cloud platforms, edge devices, or on-premises servers.
 
+4. Model Deployment: Deploying the trained model into production environments where it can make real-time or batch predictions. This could involve deploying on cloud platforms, edge devices, or on-premises servers.
 
 5. Model Monitoring: Continuously monitoring the model’s performance, data drift, and model drift. This phase involves detecting when the model's predictions start to degrade or when it needs retraining.
 
