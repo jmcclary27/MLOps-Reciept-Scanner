@@ -9,4 +9,5 @@ RUN pip install --upgrade pip \
 COPY . .
 
 EXPOSE 8080
-CMD ["python", "app.py"]  # for local dev; replace with gunicorn for Vertex
+ENTRYPOINT ["python"]
+CMD ["app.py"]

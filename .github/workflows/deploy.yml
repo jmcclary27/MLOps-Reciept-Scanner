@@ -100,5 +100,4 @@ jobs:
           --model="$MODEL_ID" \
           --display-name=trocr-deployed \
           --machine-type=n1-highmem-8 \
-          --traffic-split=0=100 \
-          --async
+          --traffic-split=0=100

@@ -108,5 +108,6 @@ def predict():
 
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
     # Fine for testing; consider gunicorn in production
     app.run(host="0.0.0.0", port=8080)
