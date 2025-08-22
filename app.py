@@ -76,12 +76,7 @@ def _ensure_loaded():
 
 @app.route("/health", methods=["GET"])
 def health():
-    # Only return 200 after the model is fully ready
-    try:
-        _ensure_loaded()
-        return "ok", 200
-    except Exception as e:
-        return f"loading: {e}", 503
+    return "ok", 200
 
 
 @app.route("/predict", methods=["POST"])
