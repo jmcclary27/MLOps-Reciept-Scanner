@@ -1,103 +1,103 @@
-name: Deploy to Vertex AI
+# name: Deploy to Vertex AI
 
-on:
-  push:
-    branches: [ master ]
+# on:
+#  push:
+#    branches: [ master ]
 
-env:
-  REGION: us-central1
-  IMAGE_NAME: trocr-flask-api
-  REPO_NAME: trocr-api-repo
+#env:
+#  REGION: us-central1
+#  IMAGE_NAME: trocr-flask-api
+#  REPO_NAME: trocr-api-repo
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+#jobs:
+#  build-and-deploy:
+#    runs-on: ubuntu-latest
 
-    steps:
-    - name: 📦 Checkout code
-      uses: actions/checkout@v3
+#    steps:
+#    - name: 📦 Checkout code
+#      uses: actions/checkout@v3
 
-    - name: ☁️ Authenticate with Google Cloud
-      uses: google-github-actions/auth@v1
-      with:
-        credentials_json: ${{ secrets.GCP_SA_KEY_JSON }}
+#    - name: ☁️ Authenticate with Google Cloud
+#      uses: google-github-actions/auth@v1
+#      with:
+#        credentials_json: ${{ secrets.GCP_SA_KEY_JSON }}
 
-    - name: ⬇️ Set up gcloud CLI
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
+#    - name: ⬇️ Set up gcloud CLI
+#      uses: google-github-actions/setup-gcloud@v1
+#      with:
+#        project_id: ${{ secrets.GCP_PROJECT_ID }}
+#
+#    - name: 🔐 Authenticate Docker to Artifact Registry
+#      run: |
+#        echo "Authenticating Docker for Artifact Registry..."
+#        gcloud auth configure-docker us-central1-docker.pkg.dev
+#
+#    - name: 🛠️ Build Docker image
+#      run: |
+#        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }} .
 
-    - name: 🔐 Authenticate Docker to Artifact Registry
-      run: |
-        echo "Authenticating Docker for Artifact Registry..."
-        gcloud auth configure-docker us-central1-docker.pkg.dev
+#    - name: 📤 Push Docker image to Artifact Registry
+#      run: |
+#        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}
 
-    - name: 🛠️ Build Docker image
-      run: |
-        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }} .
-
-    - name: 📤 Push Docker image to Artifact Registry
-      run: |
-        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}
-
-    - name: ☁️ Upload model to Vertex AI
-      run: |
-        gcloud ai models upload \
-          --region=${{ env.REGION }} \
-          --display-name=trocr-model \
-          --container-image-uri=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }} \
-          --artifact-uri=gs://my-mlflow-artifacts-bucket-2025/1/models/m-6f67b73f271b44c58f192da81c150357/artifacts/model \
-          --container-predict-route=/predict \
-          --container-health-route=/health \
-          --container-ports=8080
+#    - name: ☁️ Upload model to Vertex AI
+#      run: |
+#        gcloud ai models upload \
+#          --region=${{ env.REGION }} \
+#          --display-name=trocr-model \
+#          --container-image-uri=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }} \
+#          --artifact-uri=gs://my-mlflow-artifacts-bucket-2025/1/models/m-6f67b73f271b44c58f192da81c150357/artifacts \
+#          --container-predict-route=/predict \
+#          --container-health-route=/health \
+#          --container-ports=8080
 
     # 👈 Previous step: ensure ENDPOINT_ID exists and is exported
-    - name: 🔎 Ensure endpoint exists and export ENDPOINT_ID
-      run: |
-        set -e
+#    - name: 🔎 Ensure endpoint exists and export ENDPOINT_ID
+#      run: |
+#        set -e
 
         # Try to find existing endpoint by displayName
-        ENDPOINT_ID=$(gcloud ai endpoints list \
-          --region=${{ env.REGION }} \
-          --filter='displayName=trocr-endpoint' \
-          --format='value(name)' | head -n 1)
+#        ENDPOINT_ID=$(gcloud ai endpoints list \
+#          --region=${{ env.REGION }} \
+#          --filter='displayName=trocr-endpoint' \
+#          --format='value(name)' | head -n 1)
 
         # Create if not found
-        if [ -z "$ENDPOINT_ID" ]; then
-          echo "No existing endpoint named trocr-endpoint; creating..."
-          CREATE_OUT=$(gcloud ai endpoints create trocr-endpoint \
-            --region=${{ env.REGION }} \
-            --format='value(name)')
+#        if [ -z "$ENDPOINT_ID" ]; then
+#          echo "No existing endpoint named trocr-endpoint; creating..."
+#          CREATE_OUT=$(gcloud ai endpoints create trocr-endpoint \
+#            --region=${{ env.REGION }} \
+#            --format='value(name)')
           # The create command returns the endpoint resource name (ID)
-          ENDPOINT_ID="$CREATE_OUT"
-        fi
+#          ENDPOINT_ID="$CREATE_OUT"
+#        fi
 
         # Echo for logs and persist to later steps
-        echo "ENDPOINT_ID=$ENDPOINT_ID"
-        echo "ENDPOINT_ID=$ENDPOINT_ID" >> $GITHUB_ENV
+#        echo "ENDPOINT_ID=$ENDPOINT_ID"
+#        echo "ENDPOINT_ID=$ENDPOINT_ID" >> $GITHUB_ENV
 
 
-    - name: 🚀 Deploy model to Vertex AI endpoint
-      run: |
-        MODEL_ID=$(gcloud ai models list \
-          --region=${{ env.REGION }} \
-          --filter="displayName=trocr-model" \
-          --sort-by=~createTime \
-          --format="value(name)" | head -n 1)
+#    - name: 🚀 Deploy model to Vertex AI endpoint
+#      run: |
+#        MODEL_ID=$(gcloud ai models list \
+#          --region=${{ env.REGION }} \
+#          --filter="displayName=trocr-model" \
+#          --sort-by=~createTime \
+#          --format="value(name)" | head -n 1)
 
-        if [ -z "$MODEL_ID" ]; then
-          echo "No model found with displayName=trocr-model" >&2
-          exit 1
-        fi
+#        if [ -z "$MODEL_ID" ]; then
+#          echo "No model found with displayName=trocr-model" >&2
+#          exit 1
+#        fi
 
-        if [ -z "$ENDPOINT_ID" ]; then
-          echo "ENDPOINT_ID is empty; previous step didn't export it." >&2
-          exit 1
-        fi
+#        if [ -z "$ENDPOINT_ID" ]; then
+#          echo "ENDPOINT_ID is empty; previous step didn't export it." >&2
+#          exit 1
+#        fi
 
-        gcloud ai endpoints deploy-model "$ENDPOINT_ID" \
-          --region=${{ env.REGION }} \
-          --model="$MODEL_ID" \
-          --display-name=trocr-deployed \
-          --machine-type=n1-highmem-8 \
-          --traffic-split=0=100
+#        gcloud ai endpoints deploy-model "$ENDPOINT_ID" \
+#          --region=${{ env.REGION }} \
+#          --model="$MODEL_ID" \
+#          --display-name=trocr-deployed \
+#          --machine-type=n1-highmem-8 \
+#          --traffic-split=0=100
