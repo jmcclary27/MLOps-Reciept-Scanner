@@ -53,6 +53,64 @@ def _download_artifacts_if_needed(gs_uri: str, local_dir: str):
     if not found:
         raise FileNotFoundError(f"No model files found at {gs_uri}")
 
+def _normalize_root_uri(gs_or_local_uri: str) -> str:
+    """Ensure we list/copy from the parent 'artifacts' folder even if given .../model or .../components."""
+    u = gs_or_local_uri.rstrip("/")
+    for suffix in ("/model", "/components"):
+        if u.endswith(suffix):
+            return u[: -len(suffix)]
+    return u
+
+def _download_and_flatten_to(local_dir: str, src_uri: str):
+    """
+    Copy *all files* found under:
+      artifacts/model/** and artifacts/components/** (including image_processor/, tokenizer/)
+    into 'local_dir' FLAT (1 level), i.e., /model/<filename>.
+    If filenames collide, later files overwrite earlier ones (expected to be unique for HF artifacts).
+    """
+    os.makedirs(local_dir, exist_ok=True)
+    # If something already exists, assume we've done this once (idempotent startup)
+    if any(True for _ in os.scandir(local_dir)):
+        return
+
+    root_uri = _normalize_root_uri(src_uri)
+
+    if root_uri.startswith("gs://"):
+        bucket_name, prefix = _parse_gs_uri(root_uri)
+        client = storage.Client()
+        for blob in client.list_blobs(bucket_name, prefix=prefix):
+            # skip "directory" placeholders
+            if blob.name.endswith("/"):
+                continue
+
+            rel = blob.name[len(prefix):].lstrip("/")   # e.g., "model/config.json" or "components/tokenizer/vocab.json"
+            if not rel:
+                continue
+
+            parts = rel.split("/")
+
+            # Only keep files that are under model/ or components/
+            if parts[0] not in ("model", "components"):
+                continue
+
+            # Flatten completely to the basename
+            dst = os.path.join(local_dir, os.path.basename(rel))
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            blob.download_to_filename(dst)
+    else:
+        # Local folder source; copy recursively and flatten
+        for dirpath, _dirnames, filenames in os.walk(root_uri):
+            for fn in filenames:
+                rel = os.path.relpath(os.path.join(dirpath, fn), root_uri)
+                parts = rel.replace("\\", "/").split("/")
+                if parts[0] not in ("model", "components"):
+                    continue
+                dst = os.path.join(local_dir, os.path.basename(fn))
+                src = os.path.join(dirpath, fn)
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                # copy binary-safe
+                with open(src, "rb") as s, open(dst, "wb") as d:
+                    d.write(s.read())
 
 def _ensure_loaded():
     global MODEL, PROCESSOR, READY
@@ -60,19 +118,24 @@ def _ensure_loaded():
     if READY and MODEL is not None and PROCESSOR is not None:
         return
 
-    # If artifacts are in GCS, download them once
-    if AIP_STORAGE_URI.startswith("gs://"):
-        _download_artifacts_if_needed(AIP_STORAGE_URI, LOCAL_MODEL_DIR)
-        model_path = LOCAL_MODEL_DIR
-    else:
-        model_path = AIP_STORAGE_URI  # e.g., "saved_model" baked into the image
+    # Always pull from the parent 'artifacts' so we get both model/ and components/
+    src = _normalize_root_uri(AIP_STORAGE_URI)
 
+    _download_and_flatten_to(LOCAL_MODEL_DIR, src)
+
+    model_path = LOCAL_MODEL_DIR  # now contains config.json, pytorch_model.bin, preprocessor_config.json, tokenizer files, etc.
+
+    # Basic sanity checks (helpful error if something’s missing)
+    need = ["config.json", "pytorch_model.bin", "preprocessor_config.json"]
+    missing = [f for f in need if not os.path.exists(os.path.join(model_path, f))]
+    if missing:
+        raise FileNotFoundError(f"Missing required files in {model_path}: {missing}")
+
+    # Load
     PROCESSOR = TrOCRProcessor.from_pretrained(model_path)
     MODEL = VisionEncoderDecoderModel.from_pretrained(model_path).to(DEVICE)
     MODEL.eval()
-
     READY = True
-
 
 @app.route("/health", methods=["GET"])
 def health():
