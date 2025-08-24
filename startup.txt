@@ -45,21 +45,3 @@ gcloud ai custom-jobs create \
 
 # Starts Vertex job
 gcloud ai custom-jobs create   --region=us-central1   --display-name=receipt-ocr-train-job   --worker-pool-spec=machine-type=n1-standard-4,replica-count=1,container-image-uri=us-central1-docker.pkg.dev/mlops-receipt-scanner/receipt-ocr-training/receipt-ocr-train:latest   --args="--csv=gs://my-receipts-dvc-bucket/data/receipts.csv","--epochs=5"
-
-REGION=us-central1
-PROJECT_ID="mlops-receipt-scanner"
-ENDPOINT_ID="2035067380152926208"
-TOKEN=$(gcloud auth print-access-token)
-IMG="C:\Users\jaden\MLOps-Receipt-Scanner\artifacts\data\raw\img\000.jpg"
-
-REGION=us-central1
-PROJECT_ID="mlops-receipt-scanner"
-ENDPOINT_ID="2035067380152926208"
-TOKEN=$(gcloud auth print-access-token)
-IMG="C:\Users\jaden\MLOps-Receipt-Scanner\artifacts\data\raw\img\000.jpg"
-
-curl -v -i -X POST \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@${IMG}" \
-  "https://${REGION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${REGION}/endpoints/${ENDPOINT_ID}:rawPredict"
